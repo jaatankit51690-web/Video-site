@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>वीडियो बनाओ</title>
+<style>
+:root{--bg:#f3efe6;--ink:#1d1b26;--card:#fffdf8;--line:#d9d2c0;--accent:#3b3bd9;--accent-ink:#fff;--muted:#6b6678;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#17151f;--ink:#f1eee6;--card:#211e2b;--line:#3a3648;--accent:#8c8cff;--accent-ink:#14121c;--muted:#a29cb4}}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:"Noto Sans Devanagari",system-ui,sans-serif;line-height:1.6;padding:20px 16px 40px}
+main{max-width:520px;margin:0 auto}
+h1{font-size:1.9rem;line-height:1.2;margin:8px 0 6px}
+p.sub{color:var(--muted);margin:0 0 22px}
+label{display:block;font-weight:600;margin:16px 0 6px}
+textarea,select{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:12px}
+textarea{min-height:120px;resize:vertical}
+textarea:focus,select:focus,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+button{width:100%;margin-top:22px;font:inherit;font-weight:700;font-size:1.05rem;color:var(--accent-ink);background:var(--accent);border:0;border-radius:10px;padding:15px;cursor:pointer}
+button:disabled{opacity:.6}
+#out{margin-top:22px;background:var(--card);border:1.5px dashed var(--line);border-radius:10px;padding:16px;min-height:90px}
+video{width:100%;border-radius:8px}
+.len{color:var(--muted);font-size:.9rem;margin-top:6px}
+</style>
+</head>
+<body>
+<main>
+<h1>लिखो, वीडियो पाओ</h1>
+<p class="sub">बताओ कैसा वीडियो चाहिए। 15 सेकंड का वीडियो तैयार होगा।</p>
+
+<label for="p">वीडियो में क्या दिखे?</label>
+<textarea id="p" placeholder="जैसे: बारिश में चाय पीता हुआ एक बिल्ली का बच्चा"></textarea>
+
+<div class="row">
+<div>
+<label for="r">क्वालिटी</label>
+<select id="r"><option>720p</option><option>1080p</option></select>
+</div>
+<div>
+<label for="s">स्टाइल</label>
+<select id="s"><option>2D कार्टून</option><option>3D एनिमेशन</option><option>रियलिस्टिक</option><option>एनीमे</option></select>
+</div>
+</div>
+<div class="len">लंबाई: 15 सेकंड</div>
+
+<button id="go">वीडियो बनाओ</button>
+<div id="out" aria-live="polite">यहाँ आपका वीडियो दिखेगा।</div>
+</main>
+
+<script>
+var API_URL = "/api/generate";
+var go = document.getElementById("go");
+var out = document.getElementById("out");
+
+go.addEventListener("click", async function () {
+  var prompt = document.getElementById("p").value.trim();
+  if (!prompt) { out.textContent = "पहले ऊपर लिखो कि वीडियो में क्या चाहिए।"; return; }
+  go.disabled = true;
+  out.textContent = "वीडियो बन रहा है, थोड़ा रुको…";
+  try {
+    var res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        prompt: prompt,
+        resolution: document.getElementById("r").value,
+        style: document.getElementById("s").value,
+        seconds: 15
+      })
+    });
+    if (!res.ok) throw new Error("not connected");
+    var data = await res.json();
+    out.innerHTML = "";
+    var v = document.createElement("video");
+    v.src = data.videoUrl; v.controls = true; v.playsInline = true;
+    out.appendChild(v);
+  } catch (e) {
+    out.textContent = "डेमो मोड: पेज ठीक चल रहा है, लेकिन अभी वीडियो API जुड़ी नहीं है। वह अगले स्टेप में जोड़ेंगे।";
+  }
+  go.disabled = false;
+});
+</script>
+</body>
+</html>
